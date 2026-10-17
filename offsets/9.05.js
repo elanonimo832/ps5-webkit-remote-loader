@@ -418,6 +418,109 @@ const OFFSET_KERNEL_QA_FLAGS                    = 0x01A13088;
 const OFFSET_KERNEL_UTOKEN_FLAGS                = 0x01A130F0;
 const OFFSET_KERNEL_ROOTVNODE                   = 0x03C7B510;
 
+// This block was missing (generated without it, as were 11.40's). Unlike 11.40,
+// the 9.x family is far more conclusive: 9.00, 9.20, 9.40 and 9.60 agree on
+// EVERY field except kaslr and rodataProbe.rva. Only those two are guesses
+// below (marked TODO); everything else is an exact copy from the 9.x family.
+// 9.05's userland offsets also group with 9.00/9.20 rather than 9.40/9.60.
+window.KRW = {
+  firmware: "9.05",
+
+  security_flags: OFFSET_KERNEL_SECURITY_FLAGS,
+  kernelData: OFFSET_KERNEL_DATA,
+  allproc: OFFSET_KERNEL_ALLPROC,
+  rootvnode: OFFSET_KERNEL_ROOTVNODE,
+
+  // TODO: unverified for 9.05. Changes on every 9.x revision (9.00 0xac1451,
+  // 9.20 0xac1471, 9.40 0xac19e1, 9.60 0xac1bc1). Guessing the 9.00 value,
+  // the nearest preceding revision.
+  kaslr: {
+    mode: "rtmsg2",
+    retStatic: 0x00ac1451,
+    retLow16: 0x1451,
+  },
+
+  // Identical across 9.00 / 9.20 / 9.40 / 9.60 - safe.
+  oid: {
+    originalKind: 0x80048002,
+    writableKind: 0x70048002,
+
+    a: {
+      base: 0x02787ab8, kind: 0x02787acc, kindByte3: 0x02787acf,
+      arg1: 0x02787ad0, arg1Byte1: 0x02787ad1, arg1Value: 0x02787aa8,
+      deadSink: 0x02787ad8,
+    },
+
+    b: {
+      base: 0x02787990, kind: 0x027879a4, kindByte3: 0x027879a7,
+      arg1: 0x027879a8, arg1Value: 0x027878c0, visible: 0x027879e0,
+    },
+
+    c: {
+      base: 0x02aaa678, kind: 0x02aaa68c, arg1: 0x02aaa690,
+      arg1Value: 0x03bf8f3c, mib: [9, 8],
+    },
+  },
+
+  walkCounter: { addr: 0x03bf8f38, mib: [9, 7] },
+
+  // Identical across 9.00 / 9.20 / 9.40 / 9.60 - safe.
+  nodeMutex: 0x01a588e8,
+
+  // TODO: unverified for 9.05. Drifts unpredictably on every revision
+  // (9.00 0x110791a, 9.20 0x11077cf, 9.40 0x110790f, 9.60 0x1107bfa).
+  // Guessing the 9.00 value.
+  rodataProbe: { rva: 0x0110791a, text: "_aio_submit_cmd\0_aio_multi_wait" },
+
+  aio: {
+    waiterSize: 0x38,
+    requestSize: 0x28,
+    group: { num: 0x00, state: 0x08, waiters: 0x50 },
+    idTable: { pages: 0x220, slotStride: 0x30, entryType: 0x160 },
+  },
+
+  proc: { pid: 0x0bc, ucred: 0x040, fd: 0x048, aioInfo: 0xc38, dynlib: 0x3e8 },
+  kernelPid: 0,
+
+  ucred: {
+    uid: 0x04,
+    ruid: 0x08,
+    svuid: 0x0c,
+    ngroups: 0x10,
+    rgid: 0x14,
+    svgid: 0x18,
+    sceAuthId: 0x58,
+    sceCaps: 0x60,
+    sceCaps1: 0x68,
+    sceAttrs: 0x80,
+  },
+  sysCoreAuthId: { lo: 0x00000007, hi: 0x48000000 },
+  filedesc: { files: 0x00, cdir: 0x08, rdir: 0x10, jdir: 0x18 },
+  filedescTable: {
+    nfiles: 0x00,
+    ofiles: 0x08,
+    entryStride: 0x30,
+    fileData: 0x00,
+  },
+
+  pipe: {
+    count: 0x00,
+    in: 0x04,
+    out: 0x08,
+    size: 0x0c,
+    buffer: 0x10,
+    pair: 0xe8,
+    defaultSize: 0x4000,
+  },
+
+  dynlib: {
+    syscallStart: 0xf0,
+    syscallEnd: 0xf8,
+    restrictFlags: 0x118,
+    libkernelRef: 0x18,
+  },
+};
+
 window.SYMBOLS = {
   libkernel: {
     getpid: OFFSET_lk_getpid,
