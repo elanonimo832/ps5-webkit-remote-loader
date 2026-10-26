@@ -75,7 +75,7 @@ python3 tools/build_standalone.py payloads/hello_world.js \
 python3 tools/build_host.py --page dist/custom.html --name "PS5 CUSTOM HOST"
 ```
 
-The host builder supports multiple pages (`--page index.html=relapse.html --page poops.html=poops.html`). Multi-page hosts automatically route firmwares incompatible with Relapse (9.05, 11.40) or `?exploit=poops` to `poops.html`.
+The host builder supports multiple pages (`--page index.html=relapse.html --page poops.html=poops.html`). Multi-page hosts automatically route firmware incompatible with Relapse (9.05) or `?exploit=poops` to `poops.html`.
 
 ### Custom appearance and startup scripts
 
