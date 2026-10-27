@@ -18,7 +18,7 @@ See [docs/API.md](../docs/API.md) for the payload authoring API reference.
 | [df.js](df.js) | Filesystem capacity and mount flags | Paths, `bytes`, `inodes`, `flags`, `all`, `json`, `help` |
 | [readfile.js](readfile.js) | Read files | Paths, `text`, `hex`, `both`, `width=N`, `offset=N`, `limit=N` |
 | [klog.js](klog.js) | Read `/dev/klog` | `follow`, `timeout=N`, `sec=N`, `grep=TEXT`, `filter=TEXT`, `raw` |
-| [relapse.js](relapse.js) | Relapse kernel exploit (FW 7.00–13.60, except 9.05, 11.40) | `map`, `pipes`, `spawn` (default) |
+| [relapse.js](relapse.js) | Relapse kernel exploit (FW 7.00–13.60, except 9.05) | `map`, `pipes`, `spawn` (default) |
 | [poops.js](poops.js) | Poops kernel exploit (FW 7.00–12.00) ladder | See below |
 
 ## FTP
@@ -37,8 +37,8 @@ ends the payload.
 
 ## Kernel payloads
 
-* **Relapse** (`payloads/relapse.js`): FW 7.00 – 13.60 (except 9.05 and 11.40; requires an active network interface).
-* **Poops** (`payloads/poops.js`): FW 7.00 – 12.00 (covers 9.05 and 11.40).
+* **Relapse** (`payloads/relapse.js`): FW 7.00 – 13.60 (except 9.05; requires an active network interface).
+* **Poops** (`payloads/poops.js`): FW 7.00 – 12.00 (covers 9.05).
 
 Relapse and poops attempt privilege escalation and launch the bundled ELF loader
 ([elfldr](https://github.com/ps5-payload-dev/elfldr)) on port 9021 via kernel shellcode

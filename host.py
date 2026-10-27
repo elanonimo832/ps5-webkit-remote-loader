@@ -279,11 +279,11 @@ class GuideHandler(SimpleHTTPRequestHandler):
             candidates = [rel + n for n in ("index.html", "index.htm")]
 
         # Exploit routing based on explicit ?exploit= or User-Agent firmware.
-        # Firmware 9.05 and 11.40 do not support Relapse; route them to Poops if present.
+        # Firmware 9.05 does not support Relapse; route it to Poops if present.
         agent = self.headers.get("User-Agent", "")
         m = re.search(r"PlayStation 5/(\d+\.\d+)", agent)
         fw = float(m.group(1)) if m else None
-        is_poops_fw = fw is not None and round(fw, 2) in (9.05, 11.40)
+        is_poops_fw = fw is not None and round(fw, 2) == 9.05
 
         query_exploit = None
         if "?" in self.path:

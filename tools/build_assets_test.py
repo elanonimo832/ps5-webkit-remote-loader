@@ -126,12 +126,12 @@ class EmbeddedAssetsTest(unittest.TestCase):
                 self.assertEqual(res[2], 'poops.html')
                 self.assertEqual(res[3], data_poops)
 
-                # 3. PS5 FW 11.40 (incompatible with Relapse) -> routes to poops.html
+                # 3. PS5 FW 11.40 (compatible with Relapse) -> serves index.html (Relapse)
                 handler.path = '/document/en/ps5/index.html'
                 handler.headers = {'User-Agent': 'Mozilla/5.0 (PlayStation 5/11.40) AppleWebKit/605.1.15'}
                 res = handler._resolve()
-                self.assertEqual(res[2], 'poops.html')
-                self.assertEqual(res[3], data_poops)
+                self.assertEqual(res[2], 'index.html')
+                self.assertEqual(res[3], data_relapse)
 
                 # 4. Explicit query override ?exploit=poops on FW 7.61 -> routes to poops.html
                 handler.path = '/document/en/ps5/index.html?exploit=poops'
