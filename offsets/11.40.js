@@ -428,27 +428,25 @@ window.KRW = {
     // author record of an AF_ROUTE RTM_GET reply; kbase = ret - retStatic.
     kaslr: { mode: "rtmsg2", retStatic: 0x00b53751, retLow16: 0x3751 },
 
-    // NOTE: 11.40 uses the 11.20 OID struct layout (kind at +0x14, arg1 at +0x18),
-    // NOT the 11.60 layout (+0x1c, +0x20).
     oid: {
         originalKind: 0x80048002,
         writableKind: 0x70048002,
         a: {
-            base: 0x02929e98, kind: 0x02929eac, kindByte3: 0x02929eaf,
+            base: 0x02929e90, kind: 0x02929eac, kindByte3: 0x02929eaf,
             arg1: 0x02929eb0, arg1Byte1: 0x02929eb1, arg1Value: 0x02929e88,
             deadSink: 0x02929eb8,
         },
         b: {
-            base: 0x02929d70, kind: 0x02929d84, kindByte3: 0x02929d87,
+            base: 0x02929d68, kind: 0x02929d84, kindByte3: 0x02929d87,
             arg1: 0x02929d88, arg1Value: 0x02929ca0, visible: 0x02929dc0,
         },
         c: {
-            base: 0x02c4cb58, kind: 0x02c4cb6c, arg1: 0x02c4cb70,
+            base: 0x02c4cb50, kind: 0x02c4cb6c, arg1: 0x02c4cb70,
             arg1Value: 0x03d670bc, mib: [9, 8],
         },
     },
     walkCounter: { addr: 0x03d670b8, mib: [9, 7] },
-    nodeMutex: 0x03b77e20,
+    nodeMutex: 0x035686d0,
     rodataProbe: { rva: 0x011a7c0e, text: "_aio_submit_cmd\0_aio_multi_wait" },
 
     aio: {
