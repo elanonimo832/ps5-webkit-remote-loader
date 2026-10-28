@@ -117,7 +117,16 @@ def bind_hint(service, port, exc):
 # --- local IP --------------------------------------------------------------
 
 def detect_local_ip():
-    """Best-effort LAN IP. No traffic is actually transmitted (UDP connect)."""
+    """Best-effort LAN IP. No traffic is actually transmitted (UDP connect).
+
+    The connect() below picks the address of the interface that holds the
+    default route, which is the right answer on a simple single-homed host.
+    It is the wrong address when the console is on a second NIC, on a direct
+    cable or behind a VPN, and it fails outright when there is no default
+    route at all (isolated LAN).  Callers should show the user the chosen
+    address and local_ipv4_candidates() so a wrong one can be overridden
+    with --ip.
+    """
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         s.connect(("8.8.8.8", 80))
@@ -126,6 +135,41 @@ def detect_local_ip():
         return "127.0.0.1"
     finally:
         s.close()
+
+
+def local_ipv4_candidates():
+    """All local non-loopback IPv4 addresses, best effort, no traffic.
+
+    Used only to tell the user which address they can pass to --ip when the
+    auto-detected one is not reachable from the console.  POSIX only (the
+    SIOCGIFADDR ioctl); on other platforms it returns an empty list.
+    """
+    addrs = []
+    if not hasattr(socket, "if_nameindex") or os.name != "posix":
+        return addrs
+    try:
+        import fcntl
+        import struct
+    except ImportError:
+        return addrs
+    probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        for index, name in socket.if_nameindex():
+            try:
+                packed = fcntl.ioctl(
+                    probe.fileno(), 0x8915,  # SIOCGIFADDR
+                    struct.pack("256s", name.encode()[:15]),
+                )
+            except OSError:
+                continue
+            addr = socket.inet_ntoa(packed[20:24])
+            if addr and not addr.startswith("127."):
+                addrs.append(addr)
+    except OSError:
+        pass
+    finally:
+        probe.close()
+    return addrs
 
 
 def validate_ip(value):
@@ -720,6 +764,17 @@ def main(argv=None):
 
     say("")
     good(f"Set the PS5 DNS to {style(ip, 1, 33)}")
+    if not args.ip:
+        others = [a for a in local_ipv4_candidates() if a != ip]
+        if ip.startswith("127."):
+            note("Could not detect a LAN address (no default route?).")
+            note("Pass --ip with the address of the interface the PS5 can reach.")
+            if others:
+                note("Local addresses found: " + ", ".join(others))
+        elif others:
+            note("Other local addresses: " + ", ".join(others))
+            note(f"If the PS5 cannot reach {ip} (second NIC, direct cable,")
+            note(f"VPN), restart with --ip <one of those addresses>.")
     note("Settings -> Network -> Settings -> Set Up Internet Connection")
     note("-> Set Up Manually -> DNS Settings -> Primary DNS")
     say("")
