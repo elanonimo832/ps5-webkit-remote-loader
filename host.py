@@ -390,9 +390,34 @@ class GuideHandler(SimpleHTTPRequestHandler):
         return io.BytesIO(data)
 
 
+class _ThreadingHTTPServer(ThreadingHTTPServer):
+    """WKAL-PATCH: como ThreadingHTTPServer, pero el handshake TLS se hace en el
+    hilo del cliente.
+
+    El host original envuelve el socket DE ESCUCHA con ssl, de modo que el
+    handshake ocurre dentro de accept(): una sola conexion que no llegue a
+    completarlo deja el bucle de accept bloqueado, el servidor sin atender y el
+    apagado colgado en shutdown().
+    """
+
+    ssl_context = None
+
+    def process_request_thread(self, request, client_address):
+        # process_request() corre en el hilo del accept; process_request_thread()
+        # es el que corre en el hilo nuevo, que es donde debe ir el handshake.
+        ctx = self.ssl_context
+        if ctx is not None:
+            try:
+                request = ctx.wrap_socket(request, server_side=True)
+            except OSError:
+                self.shutdown_request(request)
+                return
+        super().process_request_thread(request, client_address)
+
+
 def build_server(host, port, allowed_host, status, quiet):
     handler = lambda *a, **kw: GuideHandler(*a, allowed_host=allowed_host, **kw)
-    httpd = ThreadingHTTPServer((host, port), handler)
+    httpd = _ThreadingHTTPServer((host, port), handler)
     httpd.daemon_threads = True
     httpd.status = status
     httpd.quiet = quiet
@@ -429,16 +454,24 @@ def make_cert(target):
                 "basicConstraints = critical, CA:FALSE\n"
             )
         try:
-            subprocess.run(
-                [
-                    "openssl", "req", "-x509", "-newkey", "rsa:2048",
-                    "-nodes", "-days", "825", "-sha256",
-                    "-keyout", key_path, "-out", cert_path,
-                    "-config", conf,
-                ],
-                check=True,
-                capture_output=True,
-            )
+            args = [
+                "openssl", "req", "-x509", "-newkey", "rsa:2048",
+                "-nodes", "-days", "825", "-sha256",
+                "-keyout", key_path, "-out", cert_path,
+                "-config", conf,
+            ]
+            # WKAL-PATCH: notBefore retrocedido a 1970 y notAfter a 2036 para
+            # tolerar CUALQUIER reloj de consola (una PS5 sin NTP puede quedar
+            # atras y rechazar el certificado como 'todavia no valido').
+            try:
+                subprocess.run(
+                    args + ["-not_before", "19700101000000Z",
+                            "-not_after", "20360101000000Z"],
+                    check=True,
+                    capture_output=True,
+                )
+            except subprocess.CalledProcessError:
+                subprocess.run(args, check=True, capture_output=True)
         except (OSError, subprocess.CalledProcessError):
             return None, None
         with open(cert_path) as f:
@@ -686,7 +719,9 @@ def main(argv=None):
             ctx.minimum_version = ssl.TLSVersion.TLSv1
         except (ValueError, ssl.SSLError):
             pass  # LibreSSL here will not go below its own floor
-        httpsd.socket = ctx.wrap_socket(httpsd.socket, server_side=True)
+        # WKAL-PATCH: NO envolver el socket de escucha; el handshake lo hace
+        # _ThreadingHTTPServer.process_request_thread() en el hilo del cliente.
+        httpsd.ssl_context = ctx
         # The cert is already loaded into the context, so leaking the temp file
         # is harmless if the OS still holds it open.
         for name in (cert_file.name, key_file.name):
